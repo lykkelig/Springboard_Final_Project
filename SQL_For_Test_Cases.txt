@@ -1,0 +1,80 @@
+Which patients use cigarettes?
+
+SELECT PAT.PATIENT_ID, PAT.NAME,
+       SUBSTRING(
+           TRANSCRIPTION,
+           CASE 
+               WHEN CHARINDEX('cigarette', TRANSCRIPTION COLLATE Latin1_General_CI_AS) > 30 
+               THEN CHARINDEX('cigarette', TRANSCRIPTION COLLATE Latin1_General_CI_AS) - 30
+               ELSE 1
+           END,
+           60 + LEN('cigarette')
+       ) AS SurroundingText
+FROM PATIENT PAT WITH(NOLOCK)
+JOIN PATIENT_NOTES PTN WITH(NOLOCK) ON PAT.PATIENT_ID = PTN.PATIENT_ID
+WHERE TRANSCRIPTION COLLATE Latin1_General_CI_AS LIKE '%cigarette%';
+
+Which patients are over 50 years of age?
+SELECT PAT.PATIENT_ID, PAT.NAME
+FROM PATIENT PAT WITH(NOLOCK)
+WHERE DATEDIFF(year, DATE_OF_BIRTH, GETDATE()) > 50;
+
+Which patients take percocet, search columns TRANSCRIPTION and MEDICATIONS?
+SELECT PAT.PATIENT_ID, PAT.NAME
+FROM PATIENT PAT WITH(NOLOCK)
+JOIN PATIENT_NOTES PTN WITH(NOLOCK) ON PAT.PATIENT_ID = PTN.PATIENT_ID
+WHERE 
+    TRANSCRIPTION COLLATE Latin1_General_CI_AS LIKE '%percocet%' OR
+    MEDICATIONS COLLATE Latin1_General_CI_AS LIKE '%percocet%';
+
+
+Which patients have had a colonoscopy? Include patient ID and name?
+SELECT PAT.PATIENT_ID, PAT.NAME
+FROM PATIENT PAT WITH(NOLOCK)
+JOIN PATIENT_NOTES PTN WITH(NOLOCK) ON PAT.PATIENT_ID = PTN.PATIENT_ID
+WHERE 
+    TRANSCRIPTION COLLATE Latin1_General_CI_AS LIKE '%percocet%' OR
+    MEDICATIONS COLLATE Latin1_General_CI_AS LIKE '%percocet%';
+
+	SELECT PAT.PATIENT_ID, PAT.NAME,
+       SUBSTRING(
+           TRANSCRIPTION,
+           CASE 
+               WHEN CHARINDEX('colonoscopy', TRANSCRIPTION COLLATE Latin1_General_CI_AS) > 20 
+               THEN CHARINDEX('colonoscopy', TRANSCRIPTION COLLATE Latin1_General_CI_AS) - 20
+               ELSE 1
+           END,
+           40 + LEN('colonoscopy')
+       ) AS SurroundingText
+FROM dbo.PATIENT PAT WITH(NOLOCK)
+JOIN dbo.PATIENT_NOTES PTN WITH(NOLOCK) ON PAT.PATIENT_ID = PTN.PATIENT_ID
+WHERE TRANSCRIPTION COLLATE Latin1_General_CI_AS LIKE '%colonoscopy%';
+
+Who is the oldest patient and how old are they?
+SELECT MIN(PAT.PATIENT_ID) AS PATIENT_ID, MAX(PAT.NAME) AS NAME, 
+MAX(DATEDIFF(year, DATE_OF_BIRTH, GETDATE()) - (CASE
+                                                         WHEN MONTH(DATE_OF_BIRTH) > MONTH(GETDATE()) OR
+                                                              (MONTH(DATE_OF_BIRTH) = MONTH(GETDATE()) AND DAY(DATE_OF_BIRTH) > DAY(GETDATE()))
+                                                         THEN 1
+                                                         ELSE 0
+                                                     END)) AS OldestAge
+FROM PATIENT AS PAT;
+
+
+Who is the youngest patient and what is their age?
+SELECT TOP 1 PAT.PATIENT_ID AS PATIENT_ID, PAT.NAME AS NAME, 
+DATEDIFF(year, DATE_OF_BIRTH, GETDATE()) - (CASE
+                                                         WHEN MONTH(DATE_OF_BIRTH) > MONTH(GETDATE()) OR
+                                                              (MONTH(DATE_OF_BIRTH) = MONTH(GETDATE()) AND DAY(DATE_OF_BIRTH) > DAY(GETDATE()))
+                                                         THEN 1
+                                                         ELSE 0
+                                                     END) AS YoungestAge
+FROM PATIENT PAT WITH(NOLOCK)
+ORDER BY YoungestAge;
+
+List all the patient ID's and names in the database that have appointments today.
+SELECT PAT.PATIENT_ID AS PATIENT_ID, PAT.NAME AS NAME, PAT.NEXT_APPT
+FROM PATIENT PAT WITH(NOLOCK)
+WHERE CONVERT(date, NEXT_APPT) = CONVERT(date, GETDATE());
+
+
